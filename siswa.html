@@ -6,19 +6,16 @@
 <title>Portal Monitoring Siswa</title>
 
 <style>
-
 body{
     font-family:Segoe UI,Arial,sans-serif;
     background:#f4f6f9;
     margin:0;
     padding:20px;
 }
-
 .container{
-    max-width:1000px;
+    max-width:1100px;
     margin:auto;
 }
-
 .header{
     background:#1A5276;
     color:white;
@@ -26,7 +23,6 @@ body{
     border-radius:12px;
     margin-bottom:20px;
 }
-
 .card{
     background:white;
     border-radius:12px;
@@ -34,103 +30,79 @@ body{
     margin-bottom:20px;
     box-shadow:0 2px 8px rgba(0,0,0,.1);
 }
-
-label{
-    font-weight:bold;
-}
-
-select{
-    width:100%;
-    padding:12px;
-    border-radius:8px;
-    border:1px solid #ccc;
-    margin-top:10px;
-}
-
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:15px;
 }
-
-.nilai{
-    font-size:42px;
+.big{
+    font-size:40px;
     font-weight:bold;
     color:#1A5276;
 }
-
-.status{
-    font-size:20px;
-    font-weight:bold;
+.good{color:#1E8449;}
+.warn{color:#D35400;}
+.bad{color:#C0392B;}
+select{
+    width:100%;
+    padding:10px;
+    font-size:16px;
 }
-
 table{
     width:100%;
     border-collapse:collapse;
 }
-
 th,td{
     border:1px solid #ddd;
     padding:10px;
 }
-
 th{
     background:#1A5276;
     color:white;
 }
-
-.loading{
-    text-align:center;
-    padding:30px;
-}
-
 </style>
-
 </head>
-
 <body>
 
 <div class="container">
 
 <div class="header">
 <h1>📊 Portal Monitoring Proyek Siswa</h1>
-<p>Monitoring Proyek Otomotif Muda Berkarya</p>
+<p>Otomotif Muda Berkarya</p>
 </div>
 
 <div class="card">
-<label>Pilih Tim</label>
-<select id="timSelect">
-<option>Memuat data...</option>
-</select>
+<label><b>Pilih Tim</b></label>
+<select id="timSelect"></select>
 </div>
 
 <div class="grid">
 
 <div class="card">
 <h3>Nilai Terakhir</h3>
-<div id="nilai" class="nilai">-</div>
+<div id="nilai" class="big">-</div>
 </div>
 
 <div class="card">
 <h3>Status</h3>
-<div id="status" class="status">-</div>
+<div id="status" class="big">-</div>
 </div>
 
 </div>
 
 <div class="card">
 <h3>Aktivitas Terakhir</h3>
-<p id="aktivitas">-</p>
+<div id="aktivitas">-</div>
 </div>
 
 <div class="card">
 <h3>Kendala</h3>
-<p id="kendala">-</p>
+<div id="kendala">-</div>
 </div>
 
 <div class="card">
 <h3>Rekomendasi Guru</h3>
-<p id="rekomendasi">-</p>
+<div id="rekomendasi">-</div>
 </div>
 
 <div class="card">
@@ -146,11 +118,7 @@ th{
 </tr>
 </thead>
 
-<tbody id="historyBody">
-<tr>
-<td colspan="4" align="center">Memuat data...</td>
-</tr>
-</tbody>
+<tbody id="historyBody"></tbody>
 
 </table>
 
@@ -160,93 +128,99 @@ th{
 
 <script>
 
-const API_URL =
-"https://script.google.com/macros/s/AKfycbwfW6LmhZmy4idGeAsw8Nd7Feqss1m_jGNFRrMAABn_Szg5t9R3un-AHNfcupy8SYtOMQ/exec";
+const CSV_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSTw5WCjtQ946XQXXjuRjF-dwkinuuxUgROyFvexYSABBF9r66PMkggNyJyn7zxf41r44nPD2Ytelc9/pub?gid=0&single=true&output=csv";
 
 let allData = [];
 
 async function loadData(){
 
-    try{
+    const response = await fetch(CSV_URL);
+    const csv = await response.text();
 
-        const response = await fetch(API_URL);
+    const rows = csv.trim().split("\n");
 
-        const text = await response.text();
+    allData = rows.slice(1).map(row => {
 
-        allData = JSON.parse(text);
+        const cols = row.split(",");
 
-        const teams = [...new Set(allData.map(item => item.tim))];
+        return {
+            timestamp: cols[0],
+            guru: cols[1],
+            tim: cols[2],
+            minggu: cols[3],
+            nilai: cols[4],
+            aktivitas: cols[5],
+            kendala: cols[6],
+            rekomendasi: cols[7],
+            status: cols[8]
+        };
 
-        const select = document.getElementById("timSelect");
+    });
 
-        select.innerHTML = "";
+    const teams =
+    [...new Set(allData.map(x => x.tim))];
 
-        teams.forEach(team => {
+    const select =
+    document.getElementById("timSelect");
 
-            const option = document.createElement("option");
+    select.innerHTML="";
 
-            option.value = team;
-            option.textContent = team;
+    teams.forEach(team=>{
 
-            select.appendChild(option);
+        const opt =
+        document.createElement("option");
 
-        });
+        opt.value=team;
+        opt.textContent=team;
 
-        if(teams.length > 0){
-            tampilkanTim(teams[0]);
-        }
+        select.appendChild(opt);
 
-    }catch(error){
+    });
 
-        console.error(error);
-
-        document.getElementById("timSelect").innerHTML =
-        "<option>Gagal memuat data</option>";
-
+    if(teams.length>0){
+        tampilkanTim(teams[0]);
     }
 
 }
 
-function tampilkanTim(namaTim){
+function tampilkanTim(team){
 
-    const dataTim =
-    allData.filter(item => item.tim === namaTim);
+    const data =
+    allData.filter(x=>x.tim===team);
 
-    if(dataTim.length === 0) return;
-
-    const terakhir =
-    dataTim[dataTim.length - 1];
+    const last =
+    data[data.length-1];
 
     document.getElementById("nilai").textContent =
-    terakhir.nilai;
+    last.nilai;
 
     document.getElementById("status").textContent =
-    terakhir.status;
+    last.status;
 
     document.getElementById("aktivitas").textContent =
-    terakhir.aktivitas;
+    last.aktivitas;
 
     document.getElementById("kendala").textContent =
-    terakhir.kendala;
+    last.kendala;
 
     document.getElementById("rekomendasi").textContent =
-    terakhir.rekomendasi;
+    last.rekomendasi;
 
     document.getElementById("historyBody").innerHTML =
-    dataTim.map(item => `
-        <tr>
-            <td>${item.minggu}</td>
-            <td>${item.nilai}</td>
-            <td>${item.status}</td>
-            <td>${item.guru}</td>
-        </tr>
+    data.map(x=>`
+    <tr>
+      <td>${x.minggu}</td>
+      <td>${x.nilai}</td>
+      <td>${x.status}</td>
+      <td>${x.guru}</td>
+    </tr>
     `).join("");
 
 }
 
-document
-.getElementById("timSelect")
-.addEventListener("change", function(){
+document.getElementById("timSelect")
+.addEventListener("change",function(){
 
     tampilkanTim(this.value);
 
