@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Monitoring Proyek — Otomotif Muda Berkarya</title>
+<style>
+  :root {
+    --primary: #1A5276;
+    --accent: #2874A6;
+    --green: #1E8449;
+    --greenLight: #D5F5E3;
+    --orange: #D35400;
+    --orangeLight: #FDEBD0;
+    --red: #C0392B;
+    --redLight: #FADBD8;
+    --gray: #566573;
+    --grayLight: #F2F3F4;
+    --white: #ffffff;
+    --mapel-tkr: #E8F8F5;
+    --mapel-pkk: #EBF5FB;
+    --mapel-bindo: #FEF9E7;
+    --mapel-math: #F9EBEA;
+    --mapel-pai: #F5EEF8;
+    --mapel-bing: #EAFAF1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #222; font-size: 14px; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white; padding: 20px 32px; display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  }
+  .header-icon { font-size: 40px; }
+  .header-text h1 { font-size: 22px; font-weight: 700; }
+  .header-text p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .header-badge { margin-left: auto; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 600; }
+
+  /* ── NAV TABS ── */
+  .nav { background: white; border-bottom: 2px solid #dde; display: flex; gap: 0; padding: 0 24px; overflow-x: auto; }
+  .nav button {
+    background: none; border: none; padding: 12px 20px; font-size: 13px; font-weight: 600;
+    color: var(--gray); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: all .2s; white-space: nowrap;
+  }
+  .nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav button:hover:not(.active) { color: var(--primary); background: var(--grayLight); }
+
+  /* ── MAIN LAYOUT ── */
+  .container { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .tab-panel { display: none; } .tab-panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  /* ── STAT ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: white; border-radius: 10px; padding: 16px; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid var(--accent);
+  }
+  .stat-card.green { border-top-color: var(--green); }
+  .stat-card.orange { border-top-color: var(--orange); }
+  .stat-card.red { border-top-color: var(--red); }
+  .stat-num { font-size: 32px; font-weight: 800; color: var(--primary); }
+  .stat-card.green .stat-num { color: var(--green); }
+  .stat-card.orange .stat-num { color: var(--orange); }
+  .stat-card.red .stat-num { color: var(--red); }
+  .stat-label { font-size: 11px; color: var(--gray); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── WEEK TIMELINE ── */
+  .week-bar { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .week-chip {
+    padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    cursor: pointer; border: 2px solid transparent; transition: all .15s;
+  }
+  .week-chip.current { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(40,116,166,0.2); }
+  .week-chip.done { background: var(--green); color: white; }
+  .week-chip.active { background: var(--accent); color: white; }
+  .week-chip.pending { background: #e0e0e0; color: #666; }
+  .week-chip.behind { background: var(--red); color: white; }
+  .week-chip.risk { background: var(--orange); color: white; }
+
+  /* ── TEAM TABLE ── */
+  .team-table { width: 100%; border-collapse: collapse; }
+  .team-table th { background: var(--primary); color: white; padding: 10px 12px; font-size: 12px; text-align: center; font-weight: 700; }
+  .team-table td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+  .team-table tr:nth-child(even) td { background: #fafbfc; }
+  .team-table tr:hover td { background: #eef4fb; }
+
+  .score-cell { text-align: center; font-weight: 700; }
+  .score-bar { height: 6px; border-radius: 3px; background: #e0e0e0; margin-top: 3px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge.ontrack { background: var(--greenLight); color: var(--green); }
+  .badge.atrisk { background: var(--orangeLight); color: var(--orange); }
+  .badge.behind { background: var(--redLight); color: var(--red); }
+
+  /* ── INPUT FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    border: 1.5px solid #ddd; border-radius: 7px; padding: 8px 12px; font-size: 13px;
+    font-family: inherit; transition: border-color .2s; background: white;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+
+  .btn { padding: 9px 20px; border: none; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--primary); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { opacity: .85; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* ── PROGRESS RING ── */
+  .ring-container { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .ring-item { text-align: center; }
+  .ring-label { font-size: 11px; color: var(--gray); font-weight: 700; margin-top: 4px; }
+  svg.ring circle { fill: none; }
+
+  /* ── MAPEL COLUMNS ── */
+  .mapel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .mapel-card { border-radius: 10px; padding: 14px; }
+  .mapel-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .mapel-score { font-size: 28px; font-weight: 800; }
+  .mapel-bar { height: 8px; border-radius: 4px; background: #e0e0e0; margin: 8px 0; overflow: hidden; }
+  .mapel-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+
+  /* ── DELIVERABLE CHECKLIST ── */
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
+  .checklist span.done { text-decoration: line-through; color: #aaa; }
+
+  /* ── ALERT ── */
+  .alert { border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .alert.warning { background: var(--orangeLight); border-left: 4px solid var(--orange); color: #7D4700; }
+  .alert.danger { background: var(--redLight); border-left: 4px solid var(--red); color: #7B241C; }
+  .alert.success { background: var(--greenLight); border-left: 4px solid var(--green); color: #1A6633; }
+  .alert.info { background: #EBF5FB; border-left: 4px solid var(--accent); color: var(--primary); }
+
+  /* ── SCHEDULE ── */
+  .schedule-row { display: flex; gap: 0; margin-bottom: 6px; }
+  .schedule-label { width: 140px; font-size: 12px; font-weight: 700; color: var(--gray); padding: 6px 8px; flex-shrink: 0; }
+  .schedule-blocks { display: flex; gap: 2px; flex: 1; }
+  .sblock { flex: 1; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: rgba(0,0,0,0.5); }
+
+  /* ── PRINT ── */
+  @media print { .nav, .btn, .form-group input, .form-group select { display: none; } .tab-panel { display: block !important; page-break-after: always; } }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .stats-row { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🚗</div>
+  <div class="header-text">
+    <h1>Dashboard Monitoring Proyek Kolaborasi</h1>
+    <p>Otomotif Muda Berkarya — Teknik Kendaraan Ringan (TKR) | SMK Kelas XI</p>
+  </div>
+  <div class="header-badge" id="currentWeekBadge">Minggu 1</div>
+</div>
+
+<nav class="nav">
+  <button class="active" onclick="showTab('overview')">📊 Overview</button>
+  <button onclick="showTab('teams')">👥 Progress Tim</button>
+  <button onclick="showTab('input')">✏️ Input Monitoring</button>
+  <button onclick="showTab('deliverable')">✅ Deliverable</button>
+  <button onclick="showTab('schedule')">🗓️ Jadwal</button>
+  <button onclick="showTab('print')">🖨️ Cetak Form</button>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════ TAB: OVERVIEW ═══════════ -->
+<div id="tab-overview" class="tab-panel active">
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="card">
+    <div class="card-title">🗓️ Progress Mingguan</div>
+    <div class="week-bar" id="weekBar"></div>
+    <div id="weekInfo" style="font-size:13px;color:var(--gray);margin-top:8px;"></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-title">🔔 Peringatan & Notifikasi</div>
+      <div id="alertsContainer"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Rata-rata Nilai per Mapel</div>
+      <div class="mapel-grid" id="mapelAvgGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ TAB: PROGRESS TIM ═══════════ -->
+<div id="tab-teams" class="tab-panel">
+  <div class="card">
+    <div class="card-title">👥 Status Progress Semua Tim</div>
+    <div style="margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:700;color:var(--gray);">Filter Minggu:</label>
+      <select id="weekFilter" onchange="renderTeamTable()" style="border:1.5px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;">
+        <option value="latest">Terbaru</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="team-table" id="teamTable">
+        <thead>
+          <tr>
+            <th>Tim</th><th>TKR</th><th>PKK</th><th>B.Indo</th><th>Matematika</th><th>PAI</th><th>B.Inggris</th><th>Rata-rata</th><th>Status</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="teamTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="teamDetailCard" style="display:none;">
+    <div class="card-title" id="teamDetailTitle">Detail Tim</div>
+    <div id="teamDetailContent"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB: INPUT ═══════════ -->
+<div id="tab-input" class="tab-panel">
+  <div class="card">
+    <div class="card-title">✏️ Form Input Monitoring Mingguan</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nama Guru / Mata Pelajaran</label>
+        <select id="inp-mapel">
+          <option value="">-- Pilih Mapel --</option>
+          <option value="TKR">🔧 TKR (Teknik Kendaraan Ringan)</option>
+          <option value="PKK">💼 PKK / Kewirausahaan</option>
+          <option value="BIndo">📚 Bahasa Indonesia</option>
+          <option value="Math">🔢 Matematika</option>
+          <option value="PAI">🕌 PAI & Budi Pekerti</option>
+          <option value="BIng">🌐 Bahasa Inggris</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nama Tim</label>
+        <select id="inp-team">
+          <option value="">-- Pilih Tim --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Minggu Ke-</label>
+        <select id="inp-week">
+          <option value="">-- Pilih Minggu --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nilai Progress (0–100)</label>
+        <input type="number" id="inp-score" min="0" max="100" placeholder="Contoh: 85" oninput="updateScorePreview()">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Aktivitas yang Dilakukan Minggu Ini</label>
+        <textarea id="inp-activity" placeholder="Deskripsikan aktivitas proyek yang dilakukan pada minggu ini..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Status Deliverable</label>
+        <select id="inp-deliverable">
+          <option value="sesuai">✅ Sesuai rencana</option>
+          <option value="terlambat">⚠️ Terlambat</option>
+          <option value="belum">❌ Belum selesai</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Keterlibatan Siswa Dominan</label>
+        <select id="inp-engagement">
+          <option value="sangat-aktif">⭐ Sangat Aktif</option>
+          <option value="aktif">👍 Aktif</option>
+          <option value="pasif">😐 Pasif</option>
+          <option value="tidak-aktif">👎 Tidak Aktif</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Kendala yang Ditemukan</label>
+        <textarea id="inp-obstacle" placeholder="Tuliskan kendala jika ada..."></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Rekomendasi / Tindak Lanjut</label>
+        <textarea id="inp-recommendation" placeholder="Rekomendasi untuk perbaikan..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-primary" onclick="submitMonitoring()">💾 Simpan Data</button>
+      <button class="btn" style="background:#eee;color:#333;" onclick="clearForm()">🗑️ Reset Form</button>
+      <div id="scorePreview" style="margin-left:auto;font-size:18px;font-weight:800;color:var(--primary);"></div>
+    </div>
+    <div id="submitMsg" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Riwayat Input (Sesi Ini)</div>
+    <div style="overflow-x:auto;"><table class="team-table" id="historyTable">
+      <thead><tr><th>Waktu</th><th>Guru/Mapel</th><th>Tim</th><th>Minggu</th><th>Nilai</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody id="historyBody"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">Belum ada data</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB: DELIVERABLE ═══════════ -->
+<div id="tab-deliverable" class="tab-panel">
+  <div class="card">
+    <div class="card-title">✅ Checklist Deliverable per Tahapan</div>
+    <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <label style="font-size:12px;font-weight:700;color:var(--gray);">Pilih Tim:</label>
+      <select id="delivTeam" onchange="renderDeliverable()" style="border:1.5px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;">
+      </select>
+    </div>
+    <div id="deliverableContent"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB: JADWAL ═══════════ -->
+<div id="tab-schedule" class="tab-panel">
+  <div class="card">
+    <div class="card-title">🗓️ Timeline 12 Minggu — Jadwal Master</div>
+    <div style="overflow-x:auto;margin-bottom:20px;">
+    <table class="team-table" id="scheduleTable">
+      <thead>
+        <tr><th>Mg</th><th>Tahap</th><th>🔧 TKR</th><th>💼 PKK</th><th>📚 B.Indo</th><th>🔢 Matematika</th><th>🕌 PAI</th><th>🌐 B.Inggris</th><th>Target Deliverable</th></tr>
+      </thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⏱️ Alokasi Jam Proyek</div>
+    <div id="allocationViz"></div>
+  </div>
+</div>
+
+<!-- ═══════════ TAB: PRINT ═══════════ -->
+<div id="tab-print" class="tab-panel">
+  <div class="card">
+    <div class="card-title">🖨️ Form Monitoring Manual — Siap Cetak</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:16px;">Gunakan tombol Print Browser (Ctrl+P) untuk mencetak form ini. Satu form untuk setiap guru, setiap minggu.</p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak Form</button>
+    </div>
+    <div id="printForm" style="border:2px solid #333;padding:24px;max-width:700px;background:white;font-family:Arial,sans-serif;">
+      <div style="text-align:center;border-bottom:3px double #1A5276;padding-bottom:12px;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:900;color:#1A5276;">FORMULIR MONITORING MINGGUAN PROYEK</div>
+        <div style="font-size:14px;color:#2874A6;margin-top:4px;">🚗 OTOMOTIF MUDA BERKARYA — TKR SMK 🔧</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;width:200px;">Nama Guru / Mapel</td>
+          <td style="padding:8px;border:1px solid #ccc;min-width:200px;">&nbsp;</td>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;width:180px;">Tanggal</td>
+          <td style="padding:8px;border:1px solid #ccc;width:150px;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;">Minggu Ke-</td>
+          <td style="padding:8px;border:1px solid #ccc;">&nbsp;</td>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;">Nama Tim</td>
+          <td style="padding:8px;border:1px solid #ccc;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;vertical-align:top;">Aktivitas Proyek Minggu Ini</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;height:80px;">1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br><br>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br><br>3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;vertical-align:top;">Deliverable</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;">☐ Sesuai rencana &nbsp;&nbsp;&nbsp; ☐ Terlambat &nbsp;&nbsp;&nbsp; ☐ Belum selesai<br><br>Keterangan: ___________________________</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;vertical-align:top;">Keterlibatan Siswa</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;">☐ Sangat Aktif &nbsp;&nbsp;&nbsp; ☐ Aktif &nbsp;&nbsp;&nbsp; ☐ Pasif &nbsp;&nbsp;&nbsp; ☐ Tidak Aktif</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;vertical-align:top;">Kendala</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;height:60px;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;vertical-align:top;">Rekomendasi</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;height:60px;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:8px;border:1px solid #ccc;background:#D6EAF8;font-weight:700;">Nilai Progress (0–100)</td>
+          <td colspan="3" style="padding:8px;border:1px solid #ccc;font-weight:700;font-size:18px;"> &nbsp;&nbsp;&nbsp;_____ / 100</td>
+        </tr>
+      </table>
+      <div style="margin-top:16px;display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:14px;">
+        <div style="text-align:center;">
+          <div style="width:200px;border-bottom:1px solid #333;margin:0 auto;height:40px;"></div>
+          <div style="font-size:12px;margin-top:4px;">Tanda Tangan Guru</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:200px;border-bottom:1px solid #333;margin:0 auto;height:40px;"></div>
+          <div style="font-size:12px;margin-top:4px;">Koordinator PKK</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end container -->
+
+<script>
+// ══════════════════════════════════════════
+// DATA & STATE
+// ══════════════════════════════════════════
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfW6LmhZmy4idGeAsw8Nd7Feqss1m_jGNFRrMAABn_Szg5t9R3un-AHNfcupy8SYtOMQ/exec";
+const TEAMS = ["Tim Bengkel Maju","Tim Speed Pro","Tim Otomoto","Tim Garasi Kreatif","Tim TechDrive"];
+const MAPELS = ["TKR","PKK","BIndo","Math","PAI","BIng"];
+const MAPEL_LABELS = { TKR:"TKR",PKK:"PKK",BIndo:"B.Indo",Math:"Matematika",PAI:"PAI",BIng:"B.Inggris" };
+
+const MAPEL_COLORS = { TKR:"#1E8449",PKK:"#2874A6",BIndo:"#D4AC0D",Math:"#CB4335",PAI:"#7D3C98",BIng:"#1E8449" };
+const MAPEL_BG = { TKR:"#E8F8F5",PKK:"#EBF5FB",BIndo:"#FEF9E7",Math:"#F9EBEA",PAI:"#F5EEF8",BIng:"#EAFAF1" };
+const STAGES = [
+  {label:"INISIASI",weeks:[1,2,3],color:"#E8F8F5",text:"#1E8449"},
+  {label:"DOKUMEN",weeks:[4,5],color:"#EBF5FB",text:"#2874A6"},
+  {label:"EKSEKUSI",weeks:[6,7,8,9],color:"#FEF9E7",text:"#B7950B"},
+  {label:"EVALUASI",weeks:[10,11],color:"#FDEBD0",text:"#D35400"},
+  {label:"PRESENTASI",weeks:[12],color:"#F5EEF8",text:"#7D3C98"},
+];
+
+const WEEK_SCHEDULE = [
+  {mg:1,tahap:"INISIASI",tkr:"Orientasi proyek; survei bengkel",pkk:"Pembentukan tim; penjelasan BMC",bindo:"Penulisan deskripsi perusahaan",math:"Identifikasi komponen biaya",pai:"Kajian niat & charter tim",bing:"Kosakata teknis otomotif",target:"Charter Tim"},
+  {mg:2,tahap:"INISIASI",tkr:"Identifikasi layanan & peralatan",pkk:"Analisis SWOT bengkel",bindo:"Teknik penulisan executive summary",math:"Perhitungan CAPEX",pai:"Etos kerja dalam Islam",bing:"Membaca brosur otomotif",target:"BMC Draft"},
+  {mg:3,tahap:"INISIASI",tkr:"Penetapan menu layanan & struktur tim",pkk:"Finalisasi BMC & SWOT",bindo:"Draft executive summary",math:"Simulasi BEP awal",pai:"Kajian mu'amalah",bing:"Reading katalog spare part",target:"BMC Final + CAPEX"},
+  {mg:4,tahap:"DOKUMEN",tkr:"SOP draft; alur pelayanan",pkk:"Workshop strategi harga",bindo:"Penulisan SOP (teks prosedur)",math:"Tabel harga + HPP",pai:"Prinsip jual-beli halal",bing:"Draft company profile",target:"SOP Draft + Harga"},
+  {mg:5,tahap:"DOKUMEN",tkr:"Finalisasi SOP + daftar alat",pkk:"Strategi promosi & medsos",bindo:"Finalisasi SOP + brosur flyer",math:"RAB + proyeksi 3 bulan",pai:"Review: bisnis sesuai syariah?",bing:"Company profile + brosur",target:"SOP Final + RAB + Brosur"},
+  {mg:6,tahap:"EKSEKUSI",tkr:"Praktik perawatan 1.000/10.000 KM + job sheet",pkk:"Monitoring pelaksanaan",bindo:"Laporan mingguan ke-1",math:"Rekap keuangan minggu 1",pai:"Jurnal refleksi kerja",bing:"Work order Bhs.Inggris",target:"Job Sheet + Laporan Mg 1"},
+  {mg:7,tahap:"EKSEKUSI",tkr:"Praktik sistem engine + overhaul",pkk:"Monitoring + update medsos",bindo:"Laporan mingguan ke-2",math:"Rekap keuangan + grafik",pai:"Jurnal refleksi",bing:"Work order Bhs.Inggris",target:"Job Sheet + Laporan Mg 2"},
+  {mg:8,tahap:"EKSEKUSI",tkr:"Praktik sistem sasis (rem, kemudi, suspensi)",pkk:"Monitoring + evaluasi medsos",bindo:"Laporan mingguan ke-3",math:"Analisis data layanan terlaris",pai:"Kajian amanah melayani",bing:"Review konten medsos",target:"Job Sheet + Laporan Mg 3"},
+  {mg:9,tahap:"EKSEKUSI",tkr:"Praktik elektrikal + quality check",pkk:"Monitoring + rekap progress",bindo:"Laporan mingguan ke-4",math:"Update proyeksi keuangan",pai:"Jurnal refleksi akhir eksekusi",bing:"Finalisasi work order",target:"Job Sheet + Laporan Mg 4"},
+  {mg:10,tahap:"EVALUASI",tkr:"Evaluasi kualitas teknis + revisi SOP",pkk:"Evaluasi strategi pemasaran",bindo:"Draft laporan akhir",math:"Realisasi vs proyeksi",pai:"Refleksi nilai Islam",bing:"Revisi company profile",target:"Draft Laporan Akhir"},
+  {mg:11,tahap:"EVALUASI",tkr:"Finalisasi portofolio teknis + dokumentasi",pkk:"Finalisasi pitch deck",bindo:"Finalisasi laporan + latihan presentasi",math:"Finalisasi laporan keuangan + grafik",pai:"Presentasi nilai-nilai islami",bing:"Executive summary (Inggris)",target:"Semua Dokumen FINAL"},
+  {mg:12,tahap:"PRESENTASI",tkr:"Demonstrasi teknis kepada juri",pkk:"Koordinasi pameran & stand",bindo:"Presentasi bisnis plan (pitching)",math:"Presentasi laporan keuangan",pai:"Presentasi etika bisnis Islam",bing:"Pitch executive summary",target:"🏆 PRESENTASI FINAL"},
+];
+
+const DELIVERABLES = [
+  {tahap:1, label:"Tahap 1 — Inisiasi (Mg 1–3)", items:[
+    "Business Model Canvas (BMC)",
+    "Analisis SWOT Bengkel",
+    "Deskripsi Perusahaan",
+    "Charter Tim (Piagam Komitmen)",
+    "Analisis Modal Awal (CAPEX)",
+  ]},
+  {tahap:2, label:"Tahap 2 — Dokumen (Mg 4–5)", items:[
+    "Dokumen SOP Bengkel",
+    "Daftar Harga Layanan",
+    "RAB (Rencana Anggaran Biaya)",
+    "Brosur/Flyer Bilingual",
+    "Profil Perusahaan Bilingual",
+  ]},
+  {tahap:3, label:"Tahap 3 — Eksekusi (Mg 6–9)", items:[
+    "Job Sheet Perawatan Berkala",
+    "Job Sheet Engine/Overhaul",
+    "Job Sheet Sasis & Elektrikal",
+    "Work Order Bilingual",
+    "Laporan Mingguan ke-1",
+    "Laporan Mingguan ke-2",
+    "Laporan Mingguan ke-3",
+    "Laporan Mingguan ke-4",
+    "Rekap Keuangan Mingguan (4x)",
+    "Konten Media Sosial (min. 8 posting)",
+  ]},
+  {tahap:4, label:"Tahap 4 — Evaluasi (Mg 10–11)", items:[
+    "Laporan Akhir Proyek (lengkap)",
+    "Slide Presentasi Final",
+    "Laporan Keuangan Realisasi",
+    "Jurnal Refleksi Etika Bisnis Islam",
+    "Company Profile Final",
+  ]},
+  {tahap:5, label:"Tahap 5 — Presentasi (Mg 12)", items:[
+    "Presentasi Final (Live Pitch)",
+    "Demonstrasi Teknis Live",
+    "Executive Summary Bahasa Inggris",
+    "Stand/Pameran Bengkel",
+    "Portofolio Lengkap (dijilid)",
+  ]},
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentWeek = 1;
+// scores[teamIdx][mapel][week] = score
+let scores = {};
+let monHistory = [];
+// deliverable checks: delivChecks[teamIdx][tahapIdx][itemIdx] = bool
+let delivChecks = {};
+
+// Init data
+TEAMS.forEach((t,ti) => {
+  scores[ti] = {};
+  MAPELS.forEach(m => { scores[ti][m] = {}; });
+  delivChecks[ti] = DELIVERABLES.map(d => d.items.map(() => false));
+});
+
+// Seed some demo data
+const demoData = [
+  {ti:0,m:"TKR",w:1,s:88},{ti:0,m:"PKK",w:1,s:85},{ti:0,m:"BIndo",w:1,s:80},{ti:0,m:"Math",w:1,s:78},{ti:0,m:"PAI",w:1,s:90},{ti:0,m:"BIng",w:1,s:75},
+  {ti:1,m:"TKR",w:1,s:72},{ti:1,m:"PKK",w:1,s:70},{ti:1,m:"BIndo",w:1,s:65},{ti:1,m:"Math",w:1,s:60},{ti:1,m:"PAI",w:1,s:80},{ti:1,m:"BIng",w:1,s:62},
+  {ti:2,m:"TKR",w:1,s:55},{ti:2,m:"PKK",w:1,s:50},{ti:2,m:"BIndo",w:1,s:58},{ti:2,m:"Math",w:1,s:45},{ti:2,m:"PAI",w:1,s:70},{ti:2,m:"BIng",w:1,s:52},
+  {ti:3,m:"TKR",w:1,s:91},{ti:3,m:"PKK",w:1,s:88},{ti:3,m:"BIndo",w:1,s:86},{ti:3,m:"Math",w:1,s:82},{ti:3,m:"PAI",w:1,s:93},{ti:3,m:"BIng",w:1,s:80},
+  {ti:4,m:"TKR",w:1,s:77},{ti:4,m:"PKK",w:1,s:74},{ti:4,m:"BIndo",w:1,s:72},{ti:4,m:"Math",w:1,s:68},{ti:4,m:"PAI",w:1,s:82},{ti:4,m:"BIng",w:1,s:70},
+];
+demoData.forEach(d => scores[d.ti][d.m][d.w] = d.s);
+// Demo deliverable checks
+[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[2,0]].forEach(([ti,ii]) => { delivChecks[ti][0][ii] = true; });
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function getTeamScoreForWeek(ti, week) {
+  const vals = MAPELS.map(m => scores[ti][m][week]).filter(v => v !== undefined);
+  if (!vals.length) return null;
+  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+function getTeamLatestScores(ti) {
+  const result = {};
+  MAPELS.forEach(m => {
+    const weeks = Object.keys(scores[ti][m]).map(Number);
+    if (weeks.length) result[m] = scores[ti][m][Math.max(...weeks)];
+    else result[m] = null;
+  });
+  return result;
+}
+function getStatus(avg) {
+  if (avg === null) return "pending";
+  if (avg >= 75) return "ontrack";
+  if (avg >= 60) return "atrisk";
+  return "behind";
+}
+function statusBadge(avg) {
+  const s = getStatus(avg);
+  const labels = {ontrack:"✅ On Track", atrisk:"⚠️ At Risk", behind:"❌ Behind", pending:"—"};
+  return `<span class="badge ${s}">${labels[s]}</span>`;
+}
+function scoreColor(s) {
+  if (s === null) return "#ccc";
+  if (s >= 75) return "#1E8449";
+  if (s >= 60) return "#D35400";
+  return "#C0392B";
+}
+
+// ══════════════════════════════════════════
+// TAB NAVIGATION
+// ══════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if (name==='overview') renderOverview();
+  if (name==='teams') renderTeamTable();
+  if (name==='deliverable') renderDeliverable();
+  if (name==='schedule') renderSchedule();
+}
+
+// ══════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════
+function renderOverview() {
+  // Stats
+  let ontrack=0, atrisk=0, behind=0, total=TEAMS.length;
+  TEAMS.forEach((t,ti) => {
+    const ls = getTeamLatestScores(ti);
+    const vals = Object.values(ls).filter(v=>v!==null);
+    if (!vals.length) return;
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    const s = getStatus(avg);
+    if (s==='ontrack') ontrack++;
+    else if (s==='atrisk') atrisk++;
+    else if (s==='behind') behind++;
+  });
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card green"><div class="stat-num">${ontrack}</div><div class="stat-label">✅ On Track</div></div>
+    <div class="stat-card orange"><div class="stat-num">${atrisk}</div><div class="stat-label">⚠️ At Risk</div></div>
+    <div class="stat-card red"><div class="stat-num">${behind}</div><div class="stat-label">❌ Behind</div></div>
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Tim</div></div>
+    <div class="stat-card"><div class="stat-num">${currentWeek}</div><div class="stat-label">Minggu Aktif</div></div>
+    <div class="stat-card"><div class="stat-num">${12-currentWeek+1}</div><div class="stat-label">Sisa Minggu</div></div>
+  `;
+
+  // Week bar
+  const wBar = document.getElementById('weekBar');
+  wBar.innerHTML = WEEK_SCHEDULE.map(w => {
+    let cls = 'pending';
+    if (w.mg < currentWeek) cls = 'done';
+    else if (w.mg === currentWeek) cls = 'active';
+    const stage = STAGES.find(s => s.weeks.includes(w.mg));
+    return `<div class="week-chip ${cls} ${w.mg===currentWeek?'current':''}" onclick="setCurrentWeek(${w.mg})" title="${w.tahap}: ${w.target}">Mg ${w.mg}</div>`;
+  }).join('');
+
+  const ws = WEEK_SCHEDULE[currentWeek-1];
+  document.getElementById('weekInfo').innerHTML = `<strong>${ws.tahap}</strong> — Target Deliverable Minggu ${currentWeek}: <span style="color:var(--green);font-weight:700;">${ws.target}</span>`;
+
+  // Alerts
+  let alerts = '';
+  TEAMS.forEach((t,ti) => {
+    const ls = getTeamLatestScores(ti);
+    const vals = Object.values(ls).filter(v=>v!==null);
+    if (!vals.length) return;
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    if (avg < 60) alerts += `<div class="alert danger">❌ <div><strong>${t}</strong> — Nilai rata-rata di bawah standar (${Math.round(avg)}/100). Perlu perhatian segera.</div></div>`;
+    else if (avg < 75) alerts += `<div class="alert warning">⚠️ <div><strong>${t}</strong> — Nilai rata-rata berisiko (${Math.round(avg)}/100). Pantau lebih ketat.</div></div>`;
+  });
+  if (!alerts) alerts = `<div class="alert success">✅ Semua tim berjalan sesuai rencana. Pertahankan momentum!</div>`;
+  if (currentWeek > 8) alerts += `<div class="alert info">ℹ️ Memasuki tahap evaluasi. Pastikan semua deliverable Tahap 3 sudah terkumpul.</div>`;
+  document.getElementById('alertsContainer').innerHTML = alerts;
+
+  // Mapel averages
+  const mapelGrid = document.getElementById('mapelAvgGrid');
+  mapelGrid.innerHTML = MAPELS.map(m => {
+    const vals = TEAMS.map((_,ti) => {
+      const ws2 = Object.keys(scores[ti][m]).map(Number);
+      if (!ws2.length) return null;
+      return scores[ti][m][Math.max(...ws2)];
+    }).filter(v=>v!==null);
+    const avg = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+    const col = scoreColor(avg);
+    return `<div class="mapel-card" style="background:${MAPEL_BG[m]};">
+      <h4 style="color:${MAPEL_COLORS[m]};">${MAPEL_LABELS[m]}</h4>
+      <div class="mapel-score" style="color:${col};">${avg || '—'}</div>
+      <div class="mapel-bar"><div class="mapel-bar-fill" style="width:${avg}%;background:${col};"></div></div>
+      <div style="font-size:11px;color:var(--gray);">${vals.length} tim dilaporkan</div>
+    </div>`;
+  }).join('');
+}
+
+function setCurrentWeek(w) {
+  currentWeek = w;
+  document.getElementById('currentWeekBadge').textContent = `Minggu ${w}`;
+  renderOverview();
+}
+
+// ══════════════════════════════════════════
+// TEAM TABLE
+// ══════════════════════════════════════════
+function renderTeamTable() {
+  const sel = document.getElementById('weekFilter');
+  // Populate filter
+  const prevOpts = sel.innerHTML;
+  sel.innerHTML = '<option value="latest">Terbaru</option>';
+  for(let w=1;w<=12;w++) sel.innerHTML += `<option value="${w}">Minggu ${w}</option>`;
+
+  const filterVal = sel.value || 'latest';
+
+  const tbody = document.getElementById('teamTableBody');
+  tbody.innerHTML = TEAMS.map((t,ti) => {
+    let mapelScores;
+    if (filterVal === 'latest') {
+      mapelScores = getTeamLatestScores(ti);
+    } else {
+      mapelScores = {};
+      MAPELS.forEach(m => { mapelScores[m] = scores[ti][m][parseInt(filterVal)] ?? null; });
+    }
+    const vals = Object.values(mapelScores).filter(v=>v!==null);
+    const avg = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+    const avgColor = scoreColor(avg);
+
+    const cells = MAPELS.map(m => {
+      const s = mapelScores[m];
+      const c = scoreColor(s);
+      return `<td class="score-cell">
+        <span style="color:${c};font-size:14px;">${s !== null ? s : '—'}</span>
+        ${s !== null ? `<div class="score-bar"><div class="score-bar-fill" style="width:${s}%;background:${c};"></div></div>` : ''}
+      </td>`;
+    }).join('');
+
+    return `<tr>
+      <td><strong>${t}</strong></td>
+      ${cells}
+      <td class="score-cell" style="font-size:16px;font-weight:800;color:${avgColor};">${avg !== null ? avg : '—'}</td>
+      <td>${avg !== null ? statusBadge(avg) : '<span style="color:#aaa;font-size:12px;">Belum ada data</span>'}</td>
+      <td><button class="btn btn-sm" style="background:var(--grayLight);" onclick="showTeamDetail(${ti})">Detail</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function showTeamDetail(ti) {
+  const card = document.getElementById('teamDetailCard');
+  const title = document.getElementById('teamDetailTitle');
+  const content = document.getElementById('teamDetailContent');
+
+  title.textContent = `Detail: ${TEAMS[ti]}`;
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth'});
+
+  // Show all weeks for this team
+  let html = '<div style="overflow-x:auto;"><table class="team-table"><thead><tr><th>Minggu</th>';
+  MAPELS.forEach(m => html += `<th>${MAPEL_LABELS[m]}</th>`);
+  html += '<th>Rata-rata</th><th>Status</th></tr></thead><tbody>';
+
+  for(let w=1;w<=12;w++) {
+    const ws = WEEK_SCHEDULE[w-1];
+    const ms = {};
+    MAPELS.forEach(m => { ms[m] = scores[ti][m][w] ?? null; });
+    const vals = Object.values(ms).filter(v=>v!==null);
+    const avg = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+    const bg = w===currentWeek ? '#EBF5FB' : (w<currentWeek?'#FAFAFA':'white');
+    html += `<tr style="background:${bg};">
+      <td><strong>Mg ${w}</strong><br><span style="font-size:11px;color:var(--gray);">${ws.tahap}</span></td>`;
+    MAPELS.forEach(m => {
+      const s = ms[m];
+      html += `<td class="score-cell" style="color:${scoreColor(s)};">${s !== null ? s : '—'}</td>`;
+    });
+    html += `<td class="score-cell" style="color:${scoreColor(avg)};font-weight:800;">${avg !== null ? avg : '—'}</td>
+      <td>${avg !== null ? statusBadge(avg) : ''}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+
+  content.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+// INPUT
+// ══════════════════════════════════════════
+function initInputForm() {
+  const teamSel = document.getElementById('inp-team');
+  const weekSel = document.getElementById('inp-week');
+  TEAMS.forEach((t,i) => teamSel.innerHTML += `<option value="${i}">${t}</option>`);
+  for(let w=1;w<=12;w++) weekSel.innerHTML += `<option value="${w}">Minggu ${w}</option>`;
+}
+
+function updateScorePreview() {
+  const s = parseInt(document.getElementById('inp-score').value);
+  const el = document.getElementById('scorePreview');
+  if (!s) { el.textContent=''; return; }
+  const col = scoreColor(s);
+  el.style.color = col;
+  el.textContent = `${s}/100 ${s>=75?'✅':s>=60?'⚠️':'❌'}`;
+}
+
+async function submitMonitoring() {
+
+  const mapel = document.getElementById('inp-mapel').value;
+  const teamIdx = document.getElementById('inp-team').value;
+  const week = document.getElementById('inp-week').value;
+  const score = parseInt(document.getElementById('inp-score').value);
+  const activity = document.getElementById('inp-activity').value;
+  const delivStat = document.getElementById('inp-deliverable').value;
+  const engage = document.getElementById('inp-engagement').value;
+  const obstacle = document.getElementById('inp-obstacle').value;
+  const rec = document.getElementById('inp-recommendation').value;
+
+  if (!mapel || teamIdx === '' || !week || isNaN(score)) {
+    document.getElementById('submitMsg').innerHTML =
+      '<div class="alert danger">⚠️ Lengkapi field wajib: Mapel, Tim, Minggu, dan Nilai.</div>';
+    return;
+  }
+
+  try {
+
+    scores[parseInt(teamIdx)][mapel][parseInt(week)] = score;
+
+    const now = new Date();
+    const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    monHistory.unshift({
+      time: timeStr,
+      mapel,
+      mapelLabel: MAPEL_LABELS[mapel],
+      teamIdx: parseInt(teamIdx),
+      team: TEAMS[parseInt(teamIdx)],
+      week: parseInt(week),
+      score,
+      delivStat,
+      engage,
+      activity,
+      obstacle,
+      rec
+    });
+
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        guru: MAPEL_LABELS[mapel],
+        tim: TEAMS[parseInt(teamIdx)],
+        minggu: week,
+        nilai: score,
+        aktivitas: activity,
+        kendala: obstacle,
+        rekomendasi: rec,
+        status: delivStat
+      })
+    });
+
+    renderHistory();
+
+    document.getElementById('submitMsg').innerHTML =
+      '<div class="alert success">✅ Data berhasil dikirim ke Google Sheet!</div>';
+
+    clearForm();
+
+  } catch(err) {
+
+    console.error(err);
+
+    document.getElementById('submitMsg').innerHTML =
+      '<div class="alert danger">❌ Gagal mengirim data ke Google Sheet.</div>';
+  }
+}
+
+function clearForm() {
+  ['inp-mapel','inp-team','inp-week'].forEach(id => document.getElementById(id).value='');
+  ['inp-score','inp-activity','inp-obstacle','inp-recommendation'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('inp-deliverable').value='sesuai';
+  document.getElementById('inp-engagement').value='sangat-aktif';
+  document.getElementById('scorePreview').textContent='';
+  document.getElementById('submitMsg').innerHTML='';
+}
+
+function renderHistory() {
+  const body = document.getElementById('historyBody');
+  if (!monHistory.length) { body.innerHTML='<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px;">Belum ada data</td></tr>'; return; }
+  body.innerHTML = monHistory.map((h,i) => `<tr>
+    <td>${h.time}</td>
+    <td><span style="background:${MAPEL_BG[h.mapel]};color:${MAPEL_COLORS[h.mapel]};padding:2px 8px;border-radius:4px;font-weight:700;">${h.mapelLabel}</span></td>
+    <td>${h.team}</td>
+    <td>Mg ${h.week}</td>
+    <td style="color:${scoreColor(h.score)};font-weight:800;">${h.score}/100</td>
+    <td>${h.delivStat==='sesuai'?'✅ Sesuai':h.delivStat==='terlambat'?'⚠️ Terlambat':'❌ Belum'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="deleteHistory(${i})">🗑️</button></td>
+  </tr>`).join('');
+}
+
+function deleteHistory(idx) {
+  const h = monHistory[idx];
+  if (scores[h.teamIdx][h.mapel][h.week] !== undefined) delete scores[h.teamIdx][h.mapel][h.week];
+  monHistory.splice(idx,1);
+  renderHistory();
+}
+
+// ══════════════════════════════════════════
+// DELIVERABLE
+// ══════════════════════════════════════════
+function initDeliverable() {
+  const sel = document.getElementById('delivTeam');
+  TEAMS.forEach((t,i) => sel.innerHTML += `<option value="${i}">${t}</option>`);
+  renderDeliverable();
+}
+
+function renderDeliverable() {
+  const ti = parseInt(document.getElementById('delivTeam').value) || 0;
+  let html = '';
+  DELIVERABLES.forEach((d,di) => {
+    const done = delivChecks[ti][di].filter(Boolean).length;
+    const pct = Math.round(done/d.items.length*100);
+    const col = scoreColor(pct);
+    html += `<div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <h3 style="color:var(--primary);font-size:14px;">${d.label}</h3>
+        <span style="margin-left:auto;font-weight:800;color:${col};">${done}/${d.items.length} (${pct}%)</span>
+      </div>
+      <div style="height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden;margin-bottom:10px;">
+        <div style="height:100%;width:${pct}%;background:${col};border-radius:4px;transition:width .4s;"></div>
+      </div>
+      <ul class="checklist">`;
+    d.items.forEach((item,ii) => {
+      const checked = delivChecks[ti][di][ii];
+      html += `<li>
+        <input type="checkbox" ${checked?'checked':''} onchange="toggleDeliverable(${ti},${di},${ii},this.checked)">
+        <span class="${checked?'done':''}">${item}</span>
+      </li>`;
+    });
+    html += '</ul></div>';
+  });
+
+  // Overall
+  const allItems = DELIVERABLES.reduce((s,d)=>s+d.items.length,0);
+  const allDone = delivChecks[ti].flat().filter(Boolean).length;
+  const overallPct = Math.round(allDone/allItems*100);
+  html = `<div class="alert info">📊 <strong>${TEAMS[ti]}</strong> — Progress keseluruhan: <strong>${allDone}/${allItems} deliverable (${overallPct}%)</strong></div>` + html;
+
+  document.getElementById('deliverableContent').innerHTML = html;
+}
+
+function toggleDeliverable(ti,di,ii,checked) {
+  delivChecks[ti][di][ii] = checked;
+  renderDeliverable();
+}
+
+// ══════════════════════════════════════════
+// SCHEDULE
+// ══════════════════════════════════════════
+function renderSchedule() {
+  const stageColors = {"INISIASI":"#E8F8F5","DOKUMEN":"#EBF5FB","EKSEKUSI":"#FEF9E7","EVALUASI":"#FDEBD0","PRESENTASI":"#F5EEF8"};
+  const stageText = {"INISIASI":"#1E8449","DOKUMEN":"#2874A6","EKSEKUSI":"#B7950B","EVALUASI":"#D35400","PRESENTASI":"#7D3C98"};
+
+  const tbody = document.getElementById('scheduleBody');
+  tbody.innerHTML = WEEK_SCHEDULE.map(w => {
+    const bg = w.mg === currentWeek ? '#EBF5FB' : stageColors[w.tahap];
+    const isCurrent = w.mg === currentWeek;
+    return `<tr style="background:${bg};">
+      <td style="text-align:center;font-weight:800;${isCurrent?'border-left:4px solid var(--accent);':''}">${w.mg}</td>
+      <td><span style="background:${stageColors[w.tahap]};color:${stageText[w.tahap]};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">${w.tahap}</span></td>
+      <td style="font-size:12px;">${w.tkr}</td>
+      <td style="font-size:12px;">${w.pkk}</td>
+      <td style="font-size:12px;">${w.bindo}</td>
+      <td style="font-size:12px;">${w.math}</td>
+      <td style="font-size:12px;">${w.pai}</td>
+      <td style="font-size:12px;">${w.bing}</td>
+      <td style="font-size:12px;font-weight:700;color:${stageText[w.tahap]};">${w.target}</td>
+    </tr>`;
+  }).join('');
+
+  // Allocation viz
+  const allocs = [
+    {mapel:"TKR",jp:12,proj:"8–10",fill:"#E8F8F5",text:"#1E8449"},
+    {mapel:"PKK",jp:5,proj:"4–5",fill:"#EBF5FB",text:"#2874A6"},
+    {mapel:"B.Indo",jp:3,proj:"2–3",fill:"#FEF9E7",text:"#B7950B"},
+    {mapel:"Matematika",jp:3,proj:"2",fill:"#F9EBEA",text:"#CB4335"},
+    {mapel:"PAI",jp:2,proj:"1–2",fill:"#F5EEF8",text:"#7D3C98"},
+    {mapel:"B.Inggris",jp:3,proj:"2",fill:"#EAFAF1",text:"#1E8449"},
+  ];
+  document.getElementById('allocationViz').innerHTML = allocs.map(a => `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <div style="width:100px;font-size:13px;font-weight:700;color:${a.text};">${a.mapel}</div>
+      <div style="width:${a.jp/12*300}px;height:28px;background:${a.fill};border:2px solid ${a.text};border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:700;color:${a.text};">${a.jp} JP</div>
+      <div style="font-size:12px;color:var(--gray);">Proyek: <strong style="color:var(--green);">${a.proj} JP</strong></div>
+    </div>
+  `).join('') + `<div style="margin-top:14px;font-size:13px;padding:10px;background:var(--grayLight);border-radius:8px;"><strong>Total:</strong> 28 JP/minggu — <span style="color:var(--green);font-weight:700;">±21 JP untuk proyek (75%)</span></div>`;
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.onload = function() {
+  initInputForm();
+  initDeliverable();
+  renderOverview();
+
+  // Populate team filter for teams tab
+  const wf = document.getElementById('weekFilter');
+  for(let w=1;w<=12;w++) wf.innerHTML += `<option value="${w}">Minggu ${w}</option>`;
+};
+</script>
+</body>
+</html>
