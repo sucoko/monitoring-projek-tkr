@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Monitoring Siswa</title>
+
+<style>
+
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1{
+    color:#1A5276;
+}
+
+select{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.stat{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.good{
+    color:green;
+}
+
+.warn{
+    color:orange;
+}
+
+.bad{
+    color:red;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:8px;
+    text-align:left;
+}
+
+th{
+    background:#1A5276;
+    color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+<h1>📊 Portal Monitoring Proyek Siswa</h1>
+
+<label>Pilih Tim</label>
+<select id="timSelect"></select>
+</div>
+
+<div class="card">
+<h3>Nilai Terakhir</h3>
+<div id="nilaiTerakhir" class="stat">-</div>
+</div>
+
+<div class="card">
+<h3>Status</h3>
+<div id="statusTerakhir">-</div>
+</div>
+
+<div class="card">
+<h3>Aktivitas Terakhir</h3>
+<div id="aktivitasTerakhir">-</div>
+</div>
+
+<div class="card">
+<h3>Kendala</h3>
+<div id="kendalaTerakhir">-</div>
+</div>
+
+<div class="card">
+<h3>Rekomendasi Guru</h3>
+<div id="rekomendasiTerakhir">-</div>
+</div>
+
+<div class="card">
+<h3>Riwayat Monitoring</h3>
+
+<table>
+<thead>
+<tr>
+<th>Minggu</th>
+<th>Nilai</th>
+<th>Status</th>
+<th>Guru</th>
+</tr>
+</thead>
+
+<tbody id="historyTable"></tbody>
+
+</table>
+</div>
+
+</div>
+
+<script>
+
+const API_URL =
+"https://script.google.com/macros/s/AKfycbwfW6LmhZmy4idGeAsw8Nd7Feqss1m_jGNFRrMAABn_Szg5t9R3un-AHNfcupy8SYtOMQ/exec";
+
+let allData=[];
+
+async function loadData(){
+
+    const response = await fetch(API_URL);
+    allData = await response.json();
+
+    const teams =
+      [...new Set(allData.map(x=>x.tim))];
+
+    const select =
+      document.getElementById("timSelect");
+
+    select.innerHTML="";
+
+    teams.forEach(t=>{
+
+      const opt =
+      document.createElement("option");
+
+      opt.value=t;
+      opt.textContent=t;
+
+      select.appendChild(opt);
+
+    });
+
+    showTeam(teams[0]);
+
+}
+
+function showTeam(team){
+
+   const rows =
+      allData.filter(x=>x.tim===team);
+
+   if(rows.length===0) return;
+
+   const latest =
+      rows[rows.length-1];
+
+   document.getElementById("nilaiTerakhir")
+     .textContent=latest.nilai;
+
+   document.getElementById("statusTerakhir")
+     .textContent=latest.status;
+
+   document.getElementById("aktivitasTerakhir")
+     .textContent=latest.aktivitas;
+
+   document.getElementById("kendalaTerakhir")
+     .textContent=latest.kendala;
+
+   document.getElementById("rekomendasiTerakhir")
+     .textContent=latest.rekomendasi;
+
+   document.getElementById("historyTable").innerHTML=
+     rows.map(r=>`
+      <tr>
+       <td>${r.minggu}</td>
+       <td>${r.nilai}</td>
+       <td>${r.status}</td>
+       <td>${r.guru}</td>
+      </tr>
+     `).join("");
+
+}
+
+document.getElementById("timSelect")
+.addEventListener("change",e=>{
+
+   showTeam(e.target.value);
+
+});
+
+loadData();
+
+</script>
+
+</body>
+</html>
